@@ -1,61 +1,16 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   main.c                                             :+:      :+:    :+:   */
+/*   init.c                                             :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: vyepremy <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/07/23 21:09:27 by vyepremy          #+#    #+#             */
-/*   Updated: 2024/07/27 16:20:11 by vyepremy         ###   ########.fr       */
+/*   Created: 2024/07/27 16:34:16 by vyepremy          #+#    #+#             */
+/*   Updated: 2024/07/27 17:00:13 by vyepremy         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include <unistd.h>
-#include <limits.h>
-#include <stdlib.h>
-#include <pthread.h>
-#include <sys/time.h>
-
-#define USAGE "Usage: \n\
-	./philosophers [NUM_PHILOS] [THINK_TIME] [EAT_TIME] [SLEEP_TIME] [[NUM_MEALS]]\n\n\
-	NUM_PHILOS   -  number of philosophers \n\
-	THINK_TIME   -  maximum time philosopher can stay hungry/thinking (ms) \n\
-	EAT_TIME     -  time philosopher spends eating (ms) \n\
-	SLEEP_TIME   -  time philosopher spends sleeping (ms) \n\
-	[NUM_MEALS]  -  optional, number of meals each philosophers eat to stop simulation\n"
-#define MALLOC_ERROR "Memory Error\n"
-
-typedef enum s_status {
-	eating = 0,
-	sleeping,
-	thinking
-} t_status;
-
-struct s_philo;
-
-typedef struct	s_data
-{
-	unsigned int	n_philos;
-	unsigned int	think_time;
-	unsigned int	eat_time;
-	unsigned int	sleep_time;
-	unsigned int	n_dinners;
-	struct s_philo	*philos;
-	pthread_t		*tid;
-	pthread_mutex_t	*forks;
-} t_data;
-
-typedef struct	s_philo
-{
-	unsigned int	id;
-	unsigned int	eat_count;
-	t_status		status;
-	t_data			*data;
-	pthread_t		t1;
-	pthread_mutex_t	lock;
-	pthread_mutex_t	*r_fork;
-	pthread_mutex_t	*l_fork;
-} t_philo;
+#include "philosophers.h"
 
 unsigned int	to_uint(char *str, int *status)
 {
@@ -118,51 +73,31 @@ int	init_args(int argc, char **argv, t_data *data)
 
 t_philo *init_philos(t_data *data)
 {
-	int	i;
+	unsigned int	i;
 
-	i = 0;
 	data->tid = (pthread_t *)malloc(sizeof(pthread_t) * data->n_philos);
-	data->forks = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t) * data->n_philos);
+	data->forks = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t) * 
+			data->n_philos);
 	data->philos = (t_philo *)malloc(sizeof(t_philo) * data->n_philos);
 	if (!data->tid || !data->forks || !data->philos)
 		return (NULL);
 	data->philos[0].l_fork = &data->forks[0];
 	data->philos[0].r_fork = &data->forks[data->n_philos - 1];
+	i = 0;
 	while (++i < data->n_philos)
 	{
 		data->philos[i].l_fork = &data->forks[i];
 		data->philos[i].r_fork = &data->forks[i - 1];
 	}
-	i = -1;
-	while (++i < data->n_philos)
+	i = 0;
+	while (i < data->n_philos)
 	{
 		data->philos[i].data = data;
 		data->philos[i].id = i;
 		data->philos[i].status = sleeping;
 		data->philos[i].eat_count = 0;
+		++i;
 	}
 	return (data->philos);
 }
 
-void	start_dinner(t_philo *philos)
-{
-
-}
-
-int	main(int argc, char **argv)
-{
-	t_philo	*philos;
-	t_data	data;
-
-	if (init_args(argc, argv, &data) == EXIT_SUCCESS)
-	{
-		philos = init_philos(&data);
-		if (philos)
-			start_dinner(philos);
-		else
-			message(MALLOC_ERROR);
-	}
-	else
-		message(USAGE);
-	return (0);
-}
