@@ -100,4 +100,3 @@ t_philo *init_philos(t_data *data)
 	}
 	return (data->philos);
 }
-
